@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Copy to .git/hooks/pre-commit in your project. Runs the same checks as the plugin hook for human commits.
+exec ar-check --root "$(git rev-parse --show-toplevel)" --staged

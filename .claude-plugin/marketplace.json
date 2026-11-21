@@ -1,0 +1,12 @@
+{
+  "name": "agentic-resume",
+  "owner": { "name": "agentic-resume contributors" },
+  "description": "A Claude Code resume builder: your career stories in, a traced, on-voice resume out, with evals that prove it.",
+  "plugins": [
+    {
+      "name": "agentic-resume",
+      "source": "./plugins/agentic-resume",
+      "description": "Skills, agents, hooks and checks that turn career stories into a resume and site copy."
+    }
+  ]
+}

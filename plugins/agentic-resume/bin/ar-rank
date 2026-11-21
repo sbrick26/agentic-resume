@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+"""ar-rank: score stories with the rubric (impact + metric strength + role fit + recency, each 1 to 5),
+write stories/INDEX.md, and print the resume set. Stories marked never_public: true are never picked.
+Usage: ar-rank [--root DIR] [--top N] [--json] [--no-write]"""
+import argparse, json, os, sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"))
+import arlib
+ap = argparse.ArgumentParser(); ap.add_argument("--root"); ap.add_argument("--top", type=int, default=8)
+ap.add_argument("--json", action="store_true"); ap.add_argument("--no-write", action="store_true")
+a = ap.parse_args(); root = arlib.project_root(a.root)
+rows, problems = [], []
+for s in arlib.load_stories(root):
+    sc = (s["fm"].get("scores") or {})
+    for k in ("impact", "metric_strength", "role_fit", "recency"):
+        v = sc.get(k)
+        if not isinstance(v, int) or not 1 <= v <= 5: problems.append(f"{s['path']}: scores.{k} must be 1 to 5 (got {v!r})")
+    total, imp = arlib.score(s["fm"])
+    rows.append({"path": s["path"], "title": s["fm"].get("title", ""), "total": total, "impact": imp,
+                 "never_public": bool(s["fm"].get("never_public"))})
+rows.sort(key=lambda r: (-r["total"], -r["impact"], r["path"]))
+pick = [r for r in rows if not r["never_public"]][: a.top]
+if not a.no_write:
+    lines = ["# Story index", "", f"Ranked by rubric total, ties broken by impact. {len(rows)} stories.", "",
+             "| Rank | Total | Impact | Story |", "|---|---|---|---|"]
+    lines += [f"| {i} | {r['total']} | {r['impact']} | [{r['title']}]({os.path.basename(r['path'])}){' (never public)' if r['never_public'] else ''} |" for i, r in enumerate(rows, 1)]
+    open(os.path.join(root, "stories", "INDEX.md"), "w", encoding="utf-8").write("\n".join(lines) + "\n")
+if a.json: print(json.dumps({"resume_set": pick, "problems": problems}, indent=2))
+else:
+    for r in pick: print(f"{r['total']:>2}  {r['path']}")
+    for p in problems: print("PROBLEM", p, file=sys.stderr)
+sys.exit(1 if problems else 0)

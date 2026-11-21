@@ -1,0 +1,3 @@
+# Sample only. Placeholder tokens, not real companies. Format: name | generic wording
+SAMPLE-CLIENT-A | a regional freight company
+SAMPLE-CLIENT-B | a health tech startup

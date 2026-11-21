@@ -1,0 +1,10 @@
+{
+  "name": "agentic-resume",
+  "displayName": "Agentic Resume",
+  "version": "0.1.0",
+  "description": "Turn career stories into a resume and site copy in your own voice. Every claim traced to a story, no client names in public output, evals included.",
+  "author": { "name": "agentic-resume contributors" },
+  "license": "MIT",
+  "keywords": ["resume", "career", "portfolio", "evals", "writing"],
+  "hooks": "./hooks/hooks.json"
+}

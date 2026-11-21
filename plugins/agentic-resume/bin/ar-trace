@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+"""ar-trace: no invented facts. Each bullet in resume/resume.md must map to a story in
+profile/resume-trace.md ("N. stories/<file>.md", private), the story must exist and not be
+never_public, every number in the bullet must appear in that story, and the public resume must not
+contain story file names or paths. Usage: ar-trace [--root DIR] [--resume FILE] [--trace FILE]"""
+import argparse, os, re, sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"))
+import arlib
+ap = argparse.ArgumentParser(); ap.add_argument("--root"); ap.add_argument("--resume"); ap.add_argument("--trace")
+a = ap.parse_args(); root = arlib.project_root(a.root)
+rp = a.resume or os.path.join(root, "resume", "resume.md"); tp = a.trace or os.path.join(root, "profile", "resume-trace.md")
+fails = []
+if not os.path.exists(rp): sys.exit(f"ar-trace: missing {rp}")
+if not os.path.exists(tp): sys.exit(f"ar-trace: missing {tp}")
+resume = open(rp, encoding="utf-8").read()
+bullets = [l.strip()[2:].strip() for l in resume.splitlines() if l.strip().startswith(("- ", "* "))]
+trace = dict((int(n), p) for n, p in re.findall(r"^(\d+)\.\s+(\S+)", open(tp, encoding="utf-8").read(), re.M))
+num = lambda s: [re.sub(r"[,]", "", x).rstrip(".") for x in re.findall(r"\d[\d,.]*", s)]
+stories = {s["path"]: s for s in arlib.load_stories(root)}
+if "stories/" in resume: fails.append("public resume contains a story path")
+for path in stories:
+    stem = os.path.splitext(os.path.basename(path))[0]
+    if stem in resume: fails.append(f"public resume contains the story file name {stem}")
+for i, b in enumerate(bullets, 1):
+    p = trace.get(i)
+    if not p: fails.append(f"bullet {i}: no trace entry"); continue
+    s = stories.get(p)
+    if not s: fails.append(f"bullet {i}: traced story {p} not found"); continue
+    if s["fm"].get("never_public"): fails.append(f"bullet {i}: traced story is never_public")
+    haystack = re.sub(r"[,]", "", s["text"])
+    for n in num(b):
+        if not re.search(r"(?<![\d.])" + re.escape(n) + r"(?![\d])", haystack): fails.append(f"bullet {i}: number '{n}' not found in {p}")
+extra = [k for k in trace if k > len(bullets)]
+if extra: fails.append(f"trace has entries for missing bullets: {extra}")
+for x in fails: print("FAIL", x)
+print(f"ar-trace: {'clean' if not fails else str(len(fails)) + ' problem(s)'} ({len(bullets)} bullets)")
+sys.exit(1 if fails else 0)

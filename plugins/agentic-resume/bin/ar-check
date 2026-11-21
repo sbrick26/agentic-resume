@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# ar-check: every gate in one call. Leak check on public paths, secret scan, gitleaks (if installed),
+# writing lint and trace on the public resume. Exit 1 on any failure.
+# Usage: ar-check [--root DIR] [--staged]
+set -u
+HERE="$(cd "$(dirname "$(realpath "$0")")" && pwd)"
+ROOT="${AR_PROJECT_ROOT:-$(pwd)}"; STAGED=0
+while [ $# -gt 0 ]; do case "$1" in --root) ROOT="$2"; shift 2;; --staged) STAGED=1; shift;; *) shift;; esac; done
+fail=0
+"$HERE/ar-guard" --root "$ROOT" || fail=1
+"$HERE/ar-secrets" "$ROOT" || fail=1
+if command -v gitleaks >/dev/null 2>&1 && [ -d "$ROOT/.git" ]; then
+  if [ "$STAGED" = 1 ]; then gl="gitleaks git $ROOT --staged"; gitleaks git "$ROOT" --staged --no-banner --redact >/dev/null 2>&1
+  else gl="gitleaks dir $ROOT"; gitleaks dir "$ROOT" --no-banner --redact >/dev/null 2>&1; fi
+  if [ $? = 0 ]; then echo "gitleaks: clean"; else echo "gitleaks: leak found (run: $gl --redact)"; fail=1; fi
+else echo "gitleaks: skipped (not installed, or not a git repo)"; fi
+if [ -f "$ROOT/resume/resume.md" ]; then
+  "$HERE/ar-lint" --root "$ROOT" "$ROOT/resume/resume.md" || fail=1
+  "$HERE/ar-trace" --root "$ROOT" || fail=1
+fi
+exit $fail

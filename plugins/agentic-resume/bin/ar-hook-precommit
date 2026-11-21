@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# PreToolUse hook for Bash(git commit *) and Bash(git push *): run ar-check; exit 2 blocks the
+# command and tells Claude why. A git pre-commit hook and CI run the same checks for human commits.
+HERE="$(cd "$(dirname "$(realpath "$0")")" && pwd)"
+ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+out="$("$HERE/ar-check" --root "$ROOT" --staged 2>&1)" && exit 0
+echo "agentic-resume checks failed; fix these before committing:" >&2
+echo "$out" | grep -E "HIT|FAIL|leak|problem" | head -20 >&2
+exit 2

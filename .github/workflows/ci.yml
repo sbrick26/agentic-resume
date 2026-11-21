@@ -1,0 +1,21 @@
+name: ci
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      # M4: pin each action to a full commit SHA before the first push.
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - name: harness (every check must catch its planted failure)
+        run: python3 evals-harness/run.py
+      - name: secrets scan
+        run: plugins/agentic-resume/bin/ar-secrets .
+      - name: no em or en dashes
+        run: "! grep -rnP '[\\x{2013}\\x{2014}]' --exclude-dir=.git ."
+      - name: gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }

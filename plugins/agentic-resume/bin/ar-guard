@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+"""ar-guard: fail if any client name or blocked term appears in a public path.
+Terms come from the project's private privacy/client-names.txt and privacy/blocklist.txt; the engine
+ships no lists of its own. Checks file contents and file names, case-insensitive, whole word.
+Usage: ar-guard [--root DIR]            scan the paths in privacy/public-paths.txt
+       ar-guard [--root DIR] --dir PATH scan a whole folder (for example a public repo)"""
+import argparse, os, sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"))
+import arlib
+ap = argparse.ArgumentParser(); ap.add_argument("--root"); ap.add_argument("--dir")
+a = ap.parse_args(); root = arlib.project_root(a.root)
+terms = arlib.blocked_terms(root)
+if not terms: sys.exit("ar-guard: no terms found in privacy/ (client-names.txt, blocklist.txt); refusing to pass")
+targets = [a.dir] if a.dir else [os.path.join(root, p) for p in arlib.public_paths(root)]
+skip = {".git", "node_modules", ".next", ".sst", ".open-next"}
+hits = files = 0
+for t in targets:
+    if not os.path.exists(t): continue
+    walk = [(os.path.dirname(t), [], [os.path.basename(t)])] if os.path.isfile(t) else os.walk(t)
+    for d, dirs, names in walk:
+        dirs[:] = [x for x in dirs if x not in skip]
+        for n in names:
+            f = os.path.join(d, n); files += 1; rel = os.path.relpath(f, a.dir or root)
+            try: text = open(f, encoding="utf-8").read()
+            except (UnicodeDecodeError, OSError): text = ""
+            for term in terms:
+                if arlib.term_hits(rel, term): print(f"HIT '{term}' in path {rel}"); hits += 1
+                ln = arlib.term_hits(text, term)
+                if ln: print(f"HIT '{term}' {rel} lines {','.join(map(str, ln))}"); hits += 1
+print(f"ar-guard: {'clean' if not hits else str(hits) + ' hit(s)'} ({files} files, {len(terms)} terms)")
+sys.exit(1 if hits else 0)
