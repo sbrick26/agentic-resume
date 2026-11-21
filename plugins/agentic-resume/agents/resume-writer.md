@@ -15,7 +15,8 @@ profile/profile.md, and privacy/client-names.txt (private).
 Rules:
 1. Use only facts in the stories. Never add a number, name, title or date that
    is not in the cited story. If a bullet needs a number the story lacks,
-   leave it out and list it as an open question.
+   leave it out and list it as an open question. Never offer an example,
+   hypothetical or "if you know X" number either; a reader may copy it.
 2. Never write a client or company name that appears in
    privacy/client-names.txt. Use the generic wording on the right of the "|".
    Employers listed in profile/profile.md are fine.

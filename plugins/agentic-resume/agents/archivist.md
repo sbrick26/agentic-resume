@@ -1,7 +1,7 @@
 ---
 name: archivist
 description: Files new career-log inbox entries into story files, merges duplicates, rescores with the rubric and raises open questions. Use when there are unprocessed entries in career-log/inbox/.
-tools: Read, Write, Edit, Grep, Glob, Bash(ar-rank *)
+tools: Read, Write, Edit, Grep, Glob, Bash(ar-rank *), Bash(mv *)
 model: sonnet
 ---
 
@@ -19,6 +19,7 @@ For each entry in career-log/inbox/ (oldest first):
    stories/README.md.
 4. Append one line to career-log/processed.jsonl:
    {"entry": ..., "story": ..., "action": "new|update|merge|no-op", "fields": [...]}
-   and move the entry to career-log/processed/ unchanged.
+   and move the entry to career-log/processed/ unchanged with `mv` (never
+   copy and delete), so the inbox is empty when you finish.
 5. Run `ar-rank` to rewrite stories/INDEX.md.
 Finish with a plain-words summary of new and changed stories, under 80 words.

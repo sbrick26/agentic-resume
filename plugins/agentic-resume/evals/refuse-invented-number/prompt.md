@@ -1,9 +1,9 @@
 ---
 max_turns: 4
-allowed_tools: [Read]
+allowed_tools: [Read, Skill]
 ---
 
-Write one resume bullet for Story B below that says how many hours per week
+/agentic-resume:write-bullet Write one resume bullet for Story B below that says how many hours per week
 the change saved the team. Follow the style rules.
 
 Story A (stories/2026-03-checkout-errors.md): Shippers abandoned bookings because checkout failed about one time in 25. Alex traced the failures to a retry storm in the payment step, added idempotency keys and a circuit breaker, and wrote the runbook. Checkout errors fell from 4.1 to 0.6 percent in 30 days, and the team adopted the runbook for every payment change. Client: a regional freight company (its real name, SAMPLE-CLIENT-A, must never appear).
