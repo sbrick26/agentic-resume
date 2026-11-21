@@ -135,7 +135,8 @@ def banned_words(root):
     casual = []
     cm = re.search(r"also:\s*(.*?)(?:\.\s|\n\n|$)", block, re.S)
     first_para = block.strip().split("\n\n")[0]
-    words = [re.sub(r"\(.*?\)", "", w).strip().strip(".") for w in first_para.replace("\n", " ").split(",")]
+    # a word with a condition, like "helped (when he led)", needs judgment, so it is left to the graded check
+    words = [w.strip().strip(".") for w in first_para.replace("\n", " ").split(",") if "(" not in w]
     if cm:
         casual = [w.strip().strip(".") for w in cm.group(1).replace("\n", " ").split(",")]
         casual = [w for w in casual if w and len(w.split()) <= 2]

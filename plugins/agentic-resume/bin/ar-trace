@@ -31,6 +31,18 @@ for i, b in enumerate(bullets, 1):
     haystack = re.sub(r"[,]", "", s["text"])
     for n in num(b):
         if not re.search(r"(?<![\d.])" + re.escape(n) + r"(?![\d])", haystack): fails.append(f"bullet {i}: number '{n}' not found in {p}")
+# every other number in the resume (summary, role lines, additional experience) must appear in a cited
+# story or in profile/profile.md; dates and years are exempt
+cited = " ".join(stories[p]["text"] for p in set(trace.values()) if p in stories)
+prof = os.path.join(root, "profile", "profile.md")
+pool = re.sub(r"[,]", "", cited + (open(prof, encoding="utf-8").read() if os.path.exists(prof) else ""))
+for i, line in enumerate(resume.splitlines(), 1):
+    s = line.strip()
+    if not s or s.startswith(("- ", "* ", "#")) or s.lower().startswith(("**skills", "**ai", "**languages", "**platforms", "**delivery")): continue
+    s = re.sub(r"\b(19|20)\d\d\b", "", s)
+    s = re.sub(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\b", "", s)
+    for n in num(s):
+        if not re.search(r"(?<![\d.])" + re.escape(n) + r"(?![\d])", pool): fails.append(f"line {i}: number '{n}' not found in any cited story or profile")
 extra = [k for k in trace if k > len(bullets)]
 if extra: fails.append(f"trace has entries for missing bullets: {extra}")
 for x in fails: print("FAIL", x)

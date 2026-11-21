@@ -64,6 +64,7 @@ CASES = [
     ("casual word in professional text", lambda r: write_resume(r, bullets(lambda b: b[3].__setitem__(0, b[3][0] + " lol"))), "ar-lint", "lol"),
     ("bullet too long", lambda r: write_resume(r, bullets(lambda b: b[1].__setitem__(0, b[1][0] + " The rotation also covered weekends, holidays, release nights, vendor outages, database maintenance windows and every single customer escalation."))), "ar-lint", "max 25"),
     ("bullet does not start with a verb", lambda r: write_resume(r, bullets(lambda b: b[1].__setitem__(0, "I rebuilt on-call at a health tech startup, cutting pages from 14 to 3 a week."))), "ar-lint", "start with a verb"),
+    ("invented number outside the bullets", lambda r: open(os.path.join(r, "resume", "resume.md"), "a").write("\nTechnical owner for 75 enterprise accounts.\n"), "ar-trace", "not found in any cited story"),
     ("story file name in public resume", lambda r: write_resume(r, bullets(lambda b: b[0].__setitem__(0, b[0][0] + " See 2026-03-checkout-errors."))), "ar-trace", "file name"),
     ("bullet with no trace entry", lambda r: open(os.path.join(r, "profile", "resume-trace.md"), "w").write("1. stories/2026-03-checkout-errors.md\n"), "ar-trace", "no trace entry"),
     ("never-public story used", lambda r: write_resume(r, bullets(lambda b: b.append(("Built a prototype for an interview.", "stories/2026-05-private-interview-exercise.md")))), "ar-trace", "never_public"),
