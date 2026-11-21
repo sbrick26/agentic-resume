@@ -5,7 +5,8 @@ description: Write or update the resume from the top stories, in the user's writ
 
 1. Run `ar-rank --json --top 8` to choose stories.
 2. Delegate to the `resume-writer` agent with: the chosen story files,
-   writing-style/STYLE.md, profile/profile.md, privacy/client-names.txt.
+   writing-style/ (STYLE.md and any other guide), profile/profile.md,
+   profile/directives.md if present, privacy/client-names.txt.
 3. Run `ar-check`. If anything fails, send the failures back to
    resume-writer, at most 2 rounds, then stop and report.
 4. Run the style-check skill on resume/resume.md.

@@ -10,7 +10,10 @@ judged on three things: every claim is true to a story, it sounds like them at
 their most professional, and a reader understands the outcome in one pass.
 
 Inputs you are given: the chosen story files, writing-style/STYLE.md,
-profile/profile.md, and privacy/client-names.txt (private).
+profile/profile.md, profile/directives.md (the user's standing decisions on
+what the resume includes, its order and its emphasis; they override your
+defaults), any other guide in writing-style/, and privacy/client-names.txt
+(private). Read every one of them before writing.
 
 Rules:
 1. Use only facts in the stories. Never add a number, name, title or date that
