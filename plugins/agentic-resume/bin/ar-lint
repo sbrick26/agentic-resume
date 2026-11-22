@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ar-lint: writing checks for text a reader will see.
 Fails on: em or en dashes; words from the "Words to avoid" list in writing-style/STYLE.md (and the
-casual-only words, in professional mode); resume bullets over 25 words or not starting with a verb;
+casual-only words, in professional mode); resume bullets over max_bullet_words (default 25) or not starting with a verb;
 sentences over 30 words. Usage: ar-lint [--root DIR] [--mode professional|casual] FILE..."""
 import argparse, os, re, sys
 sys.dont_write_bytecode = True
@@ -10,6 +10,7 @@ import arlib
 NOT_VERBS = {"i", "my", "we", "our", "the", "a", "an", "this", "that", "responsible", "worked", "was", "were", "is", "am", "helped", "assisted"}
 ap = argparse.ArgumentParser(); ap.add_argument("--root"); ap.add_argument("--mode", default="professional"); ap.add_argument("files", nargs="+")
 a = ap.parse_args(); root = arlib.project_root(a.root)
+MAXW = int(arlib.config(root)["max_bullet_words"])
 banned, casual = arlib.banned_words(root)
 casual = [w for w in casual if len(w.split()) == 1]
 words = banned + (casual if a.mode == "professional" else [])
@@ -24,7 +25,7 @@ for f in a.files:
         s = line.strip()
         if s.startswith(("- ", "* ")) and not s.startswith("- [") :
             b = s[2:].strip(); n = len(b.split())
-            if n > 25: fails.append(f"{f}:{i}: bullet has {n} words (max 25)")
+            if n > MAXW: fails.append(f"{f}:{i}: bullet has {n} words (max {MAXW}, set max_bullet_words in agentic-resume.json)")
             first = re.sub(r"[^a-z]", "", (b.split() or [""])[0].lower())
             if first in NOT_VERBS: fails.append(f"{f}:{i}: bullet should start with a verb, not '{first}'")
         elif s and not s.startswith(("#", "|")):

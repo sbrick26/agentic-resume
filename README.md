@@ -58,8 +58,26 @@ same model as the writer), qa (Haiku), site-designer (Opus, read-only).
 | ar-trace | a bullet with no story, a number not in its story, a story file name in public output |
 | ar-lint | em or en dashes, words you listed to avoid, long or verbless bullets |
 | ar-secrets | API keys, tokens, private keys |
-| ar-ats | missing standard headings, tables, images, odd date ranges, over one page, low keyword coverage (profile/target-keywords.txt) |
+| ar-ats | missing standard headings, tables, images, a missing contact line, hidden text or prompt injection; reports odd or overlapping dates, low keyword coverage (profile/target-keywords.txt) and skills never shown in a bullet |
+| ar-fit | not fitting one page: renders in headless Chrome at 10.5pt then 10pt and names the cheapest lines to trim (skipped without Chrome) |
 | ar-check | any of the above, plus gitleaks if installed |
+| ar-doctor | checks the machine and project (Python, Chrome, claude CLI, folders, settings); installs nothing |
+
+## Settings
+
+Optional `agentic-resume.json` at your project root:
+
+```json
+{"max_bullet_words": 25, "page": "letter", "min_font_pt": 10, "max_pages": 1}
+```
+
+## Editing with the user
+
+The `working-page` skill is how the resume gets from a good draft to the one
+the owner loves: a shared page, one suggestion per line, a fit and ATS check
+after every round, and the owner's final edit saved as the golden reference
+(writing-style/REFERENCE-RESUME.md) that later drafts match. The research
+behind each check is in docs/RESEARCH.md.
 
 ## Evals
 

@@ -13,6 +13,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..
 import arlib
 
 LADDER = [(10.5, 0.5), (10.0, 0.5), (10.0, 0.45)]
+PAGES = {"letter": (8.5, 11.0, "letter"), "a4": (8.27, 11.69, "A4")}
 ORPHAN = 0.35  # a last row under 35 percent full is an orphan
 
 
@@ -30,7 +31,8 @@ def inline(s):
     return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", s)
 
 
-def to_html(md, size, margin, measure):
+def to_html(md, size, margin, measure, page="letter"):
+    pw, ph, pname = PAGES[page]
     out, depth = [], 0
     for line in md.splitlines():
         if not line.strip():
@@ -46,8 +48,8 @@ def to_html(md, size, margin, measure):
             out.append(f'<div class="{cls}">{inline(h.group(2))}</div>')
         else:
             out.append(f'<p data-src="{html.escape(line[:70])}">{inline(line)}</p>')
-    css = f"""@page{{size:letter;margin:{margin}in}}
-body{{font:{size}pt/1.22 Calibri,Carlito,Arial,sans-serif;margin:0;color:#111;{'width:' + str(8.5 - 2 * margin) + 'in' if measure else ''}}}
+    css = f"""@page{{size:{pname};margin:{margin}in}}
+body{{font:{size}pt/1.22 Calibri,Carlito,Arial,sans-serif;margin:0;color:#111;{'width:' + str(pw - 2 * margin) + 'in' if measure else ''}}}
 .name{{font-size:18pt;font-weight:700}}.h2{{font-size:12pt;font-weight:700;margin:5pt 0 2pt;border-bottom:1px solid #000}}
 .h3{{font-size:11pt;font-weight:700;margin:5pt 0 1pt}}p{{margin:1pt 0}}ul{{margin:0;padding:0}}
 li{{margin:0 0 0 14pt;list-style:disc}}li.l1{{margin-left:28pt;list-style:circle}}li.l2{{margin-left:42pt;list-style:square}}"""
@@ -69,14 +71,14 @@ document.getElementById('ar-out').textContent = 'AR_FIT:' + JSON.stringify(res);
     return f'<html><head><meta charset="utf-8"><title>Resume</title><style>{css}</style></head><body><ul>{"".join(out)}</ul>{script}</body></html>'
 
 
-def measure(chrome, md, size, margin, tmp):
-    p = os.path.join(tmp, "m.html"); open(p, "w", encoding="utf-8").write(to_html(md, size, margin, True))
+def measure(chrome, md, size, margin, tmp, page="letter"):
+    p = os.path.join(tmp, "m.html"); open(p, "w", encoding="utf-8").write(to_html(md, size, margin, True, page))
     r = subprocess.run([chrome, "--headless", "--disable-gpu", "--no-sandbox", "--dump-dom", "file://" + p],
                        capture_output=True, text=True, timeout=120)
     m = re.search(r"AR_FIT:(\{.*?\})</pre>", html.unescape(r.stdout), re.S) or re.search(r"AR_FIT:(\{.*\})", html.unescape(r.stdout))
     if not m:
         raise RuntimeError("could not read the measurement from Chrome")
-    d = json.loads(m.group(1)); d["page"] = round((11 - 2 * margin) * 96); d["line"] = size * 1.22 * 96 / 72
+    d = json.loads(m.group(1)); d["page"] = round((PAGES[page][1] - 2 * margin) * 96); d["line"] = size * 1.22 * 96 / 72
     return d
 
 
@@ -89,17 +91,18 @@ def main():
     chrome = find_chrome()
     if not chrome:
         print("ar-fit: skipped (no Chrome or Chromium found; set AR_CHROME)"); return 0
+    cfg = arlib.config(root)
     tmp = tempfile.mkdtemp(prefix="ar-fit-")
     results = []
-    for size, margin in LADDER:
-        d = measure(chrome, md, size, margin, tmp)
+    for size, margin in [s for s in LADDER if s[0] >= float(cfg["min_font_pt"])] or LADDER[:1]:
+        d = measure(chrome, md, size, margin, tmp, cfg["page"])
         over = (d["height"] - d["page"]) / d["line"]
         results.append(dict(size=size, margin=margin, fits=d["height"] <= d["page"], lines_over=round(over, 1), items=d["items"]))
         if d["height"] <= d["page"]:
             break
     best = results[-1]
     if a.pdf:
-        hp = os.path.join(tmp, "p.html"); open(hp, "w", encoding="utf-8").write(to_html(md, best["size"], best["margin"], False))
+        hp = os.path.join(tmp, "p.html"); open(hp, "w", encoding="utf-8").write(to_html(md, best["size"], best["margin"], False, cfg["page"]))
         subprocess.run([chrome, "--headless", "--disable-gpu", "--no-sandbox", "--no-pdf-header-footer",
                         f"--print-to-pdf={os.path.abspath(a.pdf)}", "file://" + hp], capture_output=True, timeout=120)
     wraps = sorted([i for i in best["items"] if i["rows"] > 1], key=lambda i: i["last_fill"])

@@ -19,6 +19,24 @@ def project_root(arg=None):
     return os.path.abspath(arg or os.environ.get("AR_PROJECT_ROOT") or os.getcwd())
 
 
+DEFAULTS = {"max_bullet_words": 25, "page": "letter", "min_font_pt": 10.0, "max_pages": 1}
+
+
+def config(root):
+    """Per-project settings from agentic-resume.json at the project root, over the defaults.
+    Unknown keys are ignored; a malformed file is an error the user should see."""
+    import json
+    cfg = dict(DEFAULTS)
+    p = os.path.join(root, "agentic-resume.json")
+    if os.path.exists(p):
+        with open(p, encoding="utf-8") as fh:
+            user = json.load(fh)
+        cfg.update({k: v for k, v in user.items() if k in DEFAULTS})
+    if cfg["page"] not in ("letter", "a4"):
+        raise ValueError("agentic-resume.json: page must be letter or a4")
+    return cfg
+
+
 def _scalar(v):
     v = v.strip()
     if v.startswith('"') and v.endswith('"') and len(v) >= 2:
