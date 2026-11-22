@@ -134,6 +134,27 @@ def main():
         ok_all &= ok
         results.append((label, "ar-ats", f"exit {code}", "PASS" if ok else "WRONG"))
 
+    # ATS: overlapping roles at two companies are reported
+    root = fresh(tmp, "ats-overlap")
+    fpath = os.path.join(root, "resume", "ats-overlap.md")
+    open(fpath, "w").write(ats_ok.replace("## Education", "### A small studio\n**Engineer** | Jan 2025 to Dec 2025\n\n- Built a booking app.\n\n## Education"))
+    code, out = run([os.path.join(BIN, "ar-ats"), "--root", root, "--resume", fpath], root)
+    ok = "overlap" in out
+    ok_all &= ok
+    results.append(("ATS: overlapping roles are reported", "ar-ats", "DATES line" if ok else "none", "PASS" if ok else "WRONG"))
+
+    # one-page fit: a short resume fits; a resume of 80 long bullets does not (skipped without Chrome)
+    long_body = ats_ok.replace("- Cut checkout errors", "\n".join(["- Cut checkout errors from 4.1 to 0.6 percent by rebuilding the payment retry queue and its alerting for the ops team."] * 80) + "\n- Cut checkout errors")
+    for label, body, want in (("fit: a short resume fits one page", ats_ok, 0), ("fit: an overlong resume fails", long_body, 1)):
+        root = fresh(tmp, "fit" + str(want))
+        fpath = os.path.join(root, "resume", "fit-test.md"); open(fpath, "w").write(body)
+        code, out = run([os.path.join(BIN, "ar-fit"), "--root", root, "--resume", fpath], root)
+        if "skipped" in out:
+            results.append((label, "ar-fit", "skipped (no Chrome)", "PASS")); continue
+        ok = (code == 0) == (want == 0)
+        ok_all &= ok
+        results.append((label, "ar-fit", f"exit {code}", "PASS" if ok else "WRONG"))
+
     w = max(len(r[0]) for r in results)
     print(f"{'case'.ljust(w)} | must fail     | failed                 | result")
     for name, tool, failed, res in results:

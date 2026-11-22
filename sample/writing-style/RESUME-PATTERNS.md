@@ -55,6 +55,44 @@ tools and product, feeding findings back to product, and communicating with
 users up to executives. Show each of these with evidence. Avoid sounding
 like sales instead of engineering. [P12, P13, P7]
 
+## Cohesion: say more with less
+
+Learned from a real owner-led rewrite (the examples are invented):
+
+1. **Cut words, not facts.** When asked for "shorter", keep every number,
+   name and result; remove filler, repeated verbs and lists. Owners reject a
+   short line that lost the point ("expanded the deal" without why).
+2. **One program, one parent bullet.** When several results come from one
+   program, use a parent line and labeled sub-bullets ("Pre-sales: ...",
+   "Post-sales: ..."), each one line with its own result.
+3. **Same-shaped facts share a line.** Three features with one metric each
+   become one line: "Shipped Search (+12% sessions), Saved Lists (+8%
+   saves) and Alerts (+5% returns)."
+4. **Tool lists live in Skills.** A bullet names at most one or two tools
+   that matter to the result; the inventory goes to a grouped Skills section.
+   Every keyword needs to appear once, not in every line.
+5. **The scope line carries context.** One line under each role: scale,
+   domains, who you served. Spell out acronyms once (a parser does not know
+   your team's shorthand), and avoid "various" and "etc.".
+6. **Grouped skills, labeled.** Three to five lines such as "AI and agents:",
+   "Platforms:", "Engineering:", "Integrations:". Each line fits on one row.
+7. **Reread after every edit.** Owner edits leave small slips ("its" with no
+   noun, a dropped "the", a doubled "build"); fix them as suggestions.
+
+## Fitting one page
+
+Measure, do not guess: `ar-fit` renders the page and reports lines over at
+10.5pt, then 10pt. 10pt with 0.45 to 0.5 inch margins is the floor. Cut in
+this order, measuring after each step:
+
+1. **Orphans:** a line whose last row holds a word or two. Trimming 2 to 4
+   words saves a whole row each, with no fact lost.
+2. **Lists in parentheses** inside bullets: move to Skills or drop.
+3. **Merge related lines** (team lead plus the tooling you ran) and
+   same-shaped sub-bullets (rule 3 above).
+4. **Weakest bullet last:** drop the line with no result before touching one
+   with a number. Ask the owner before cutting a fact.
+
 ## Avoid
 
 Duties instead of outcomes; bullets with no numbers; buzzword summaries;

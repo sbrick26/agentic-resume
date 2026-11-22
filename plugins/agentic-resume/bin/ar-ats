@@ -52,7 +52,8 @@ first = next((l for l in lines if l.strip()), "")
 name_m = re.search(r"\*\*(.+?)\*\*", first) or re.match(r"#*\s*([A-Z][\w'.-]+(?: [A-Z][\w'.-]+){0,3})", first.strip())
 record = {"name": name_m.group(1).strip() if name_m else None,
           "emails": re.findall(r"[\w.+-]+@[\w-]+\.[\w.]+", text),
-          "links": re.findall(r"\b(?:[\w-]+\.)+(?:com|dev|io|net|org)(?:/[\w./-]*)?", first),
+          # the contact line may sit under the name, so read the first three non-empty lines
+          "links": re.findall(r"\b(?:[\w-]+\.)+(?:com|dev|io|net|org)(?:/[\w./-]*)?", " ".join([l for l in lines if l.strip()][:3])),
           "roles": [], "education": [], "skills": []}
 section, company = None, None
 for l in lines:
@@ -71,10 +72,48 @@ for l in lines:
     elif section == "edu" and st.startswith(("-", "*")) or (section == "edu" and st and not st.startswith("#")):
         if st: record["education"].append(st.lstrip("-* ").strip())
     elif section == "skills" and st:
-        record["skills"] += [x.strip(" .") for x in re.split(r",|;", re.sub(r"\*\*.*?\*\*:?", "", st)) if x.strip(" .")]
+        # split on commas and semicolons outside parentheses: "AWS (EC2, S3)" stays one skill
+        record["skills"] += [x.strip(" .") for x in re.split(r"[,;](?![^()]*\))", re.sub(r"\*\*.*?\*\*:?", "", st)) if x.strip(" .")]
+# hidden text and injection: real screeners see about 1% of resumes with hidden prompts; never ship one
+if re.search(r"[\u200b-\u200f\u2060\ufeff]", text): issues.append("contains zero-width characters (reads as hidden text)"); score -= 15; fatal.append("hidden")
+if re.search(r"(?i)\b(ignore (all|previous|prior) instructions|you are an? (ai|llm|assistant)|rank this (candidate|resume)|system prompt)\b", text):
+    issues.append("contains instruction-like text aimed at an AI screener"); score -= 15; fatal.append("injection")
+if re.search(r"(?i)color:\s*(#fff\b|#ffffff|white)|font-size:\s*[0-3](\.\d+)?(pt|px)", text):
+    issues.append("contains white or tiny text styling"); score -= 15; fatal.append("hidden")
+# keywords in context: a skill that appears only in the Skills section reads as unproven to screeners
+body = re.split(r"(?im)^#+\s*(technical )?skills\b", text)[0]
+skill_sec = text[len(body):]
+unproven = []
+for line in skill_sec.splitlines()[1:]:
+    for sk in re.split(r"[,;](?![^()]*\))", re.sub(r"\*\*.*?\*\*:?", "", line)):
+        sk = re.sub(r"\s*\(.*?\)", "", sk).strip(" .")
+        if len(sk) > 1 and not re.search(r"(?<![\w])" + re.escape(sk) + r"(?![\w])", body, re.I): unproven.append(sk)
+if unproven: print(f"SKILLS only in the Skills section (not shown in any bullet): {', '.join(unproven)}")
+# keyword stuffing: one term many times reads as gaming the filter
+words_l = re.findall(r"[A-Za-z][\w.+#-]{2,}", body)
+from collections import Counter
+stuffed = [w for w, n in Counter(x.lower() for x in words_l).items() if n > 4 and w in {k.lower() for k in (kws if os.path.exists(kw_path) else [])}]
+if stuffed: print(f"STUFFING keyword used more than 4 times in the body: {', '.join(stuffed)}")
 parse_issues = []
+# date sanity: overlapping roles at different companies, and gaps over 6 months, are what screeners ask about
+def _ym(s):
+    if not s or s.lower() == "present": return 9999 * 12
+    m = re.match(r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.? (\d{4})", s)
+    if m: return int(m.group(2)) * 12 + "JanFebMarAprMayJunJulAugSepOctNovDec".index(m.group(1)) // 3
+    m = re.match(r"(\d{4})", s); return int(m.group(1)) * 12 + 11 if m else None
+spans = [(r["company"], _ym(r["start"]), _ym(r["end"])) for r in record["roles"]]
+spans = [s for s in spans if s[1] and s[2]]
+for i, x in enumerate(spans):
+    for y in spans[i + 1:]:
+        if x[0] != y[0] and x[1] < y[2] and y[1] < x[2]:
+            print(f"DATES {x[0]} and {y[0]} overlap; say why (part-time, contract) or fix the dates")
+starts = sorted(spans, key=lambda s: s[1])
+for prev, nxt in zip(starts, starts[1:]):
+    end = max(s[2] for s in starts if s[1] <= prev[1])
+    if nxt[1] - end > 6 and end < 9999 * 12: print(f"DATES gap of {(nxt[1] - end) // 12}y {(nxt[1] - end) % 12}m before {nxt[0]}")
 if not record["name"]: parse_issues.append("parser could not find a name on the first line")
-if not record["emails"]: parse_issues.append("no email found (most ATS require one)")
+if not record["emails"] and not re.search(r"\+?\d[\d ().-]{8,}\d", " ".join(lines[:4])):
+    parse_issues.append("no email or phone near the top (Textkernel treats this as fatal, code 441)")
 if not record["roles"]: parse_issues.append("no roles parsed (title | Mon YYYY to Mon YYYY under a company heading)")
 for r in record["roles"]:
     if not r["company"]: parse_issues.append(f"role '{r['title']}' has no company the parser can attach")

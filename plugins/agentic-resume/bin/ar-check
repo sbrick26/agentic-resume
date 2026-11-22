@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ar-check: every gate in one call. Leak check on public paths, secret scan, gitleaks (if installed),
-# writing lint and trace on the public resume. Exit 1 on any failure.
+# writing lint, trace, mock ATS and one-page fit on the public resume. Exit 1 on any failure.
 # Usage: ar-check [--root DIR] [--staged]
 set -u
 HERE="$(cd "$(dirname "$(realpath "$0")")" && pwd)"
@@ -18,5 +18,6 @@ if [ -f "$ROOT/resume/resume.md" ]; then
   "$HERE/ar-lint" --root "$ROOT" "$ROOT/resume/resume.md" || fail=1
   "$HERE/ar-trace" --root "$ROOT" || fail=1
   "$HERE/ar-ats" --root "$ROOT" || fail=1
+  "$HERE/ar-fit" --root "$ROOT" || fail=1
 fi
 exit $fail
