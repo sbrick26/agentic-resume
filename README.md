@@ -1,32 +1,56 @@
 # agentic-resume
 
-A Claude Code plugin that turns your career stories into a resume and site
-copy in your own writing style, and proves it with evals.
+**Tell Claude what you did at work. Get a resume that stays current, fits one
+page, passes ATS scans, and never makes things up.**
 
-- **Stories in.** Every update (a daily check-in, a win, a note) lands as a
-  dated entry; Claude files it into one story per piece of work and scores
-  it on impact, metric strength, role fit and recency.
-- **Resume out.** The best stories become resume bullets in your voice.
-  Every bullet traces to a story, and every number in it must appear there.
-- **Private stays private.** Client names you list are never written to
-  public output; the generic wording you choose is used instead.
-- **Evals included.** A harness proves each check catches what it should,
-  and graded evals score accuracy and style.
+It is a free resume builder that runs inside Claude Code (Anthropic's AI
+coding assistant). No website, no account, no upload: your career data stays
+in a folder on your computer.
 
-## Quick start (60 seconds)
+## Try it in 3 steps
 
-```bash
-git clone <this repo> agentic-resume
-cd agentic-resume
-./setup.sh ~/my-resume          # makes a project from the sample person
-cd ~/my-resume && claude        # then try: /agentic-resume:rank-stories
+1. Install Claude Code: https://code.claude.com
+2. Get this repo and open Claude in it:
+   ```bash
+   git clone https://github.com/sbrick26/agentic-resume
+   cd agentic-resume
+   claude
+   ```
+3. Type: **"Set me up."**
+
+Claude checks your machine, makes your own private resume folder, reads your
+current resume (paste it or point to the file), and writes your first
+version with every check run. To just look around first, it starts with a
+made-up sample person, Alex Rivera.
+
+## What you get
+
+- **A daily habit, not a yearly scramble.** Tell Claude what you shipped
+  ("cut deploy time from 45 to 8 minutes"). It files each update as a story
+  with its numbers, and keeps your resume and site copy up to date.
+- **Nothing invented.** Every resume line traces to one of your stories,
+  and every number in it must be in that story.
+- **One page, checked.** It renders the page and tells you exactly which
+  lines to trim.
+- **Scanned like a recruiter would.** A mock ATS parse (headings, dates,
+  contact line, keywords, hidden text) and optional mock AI screeners that
+  read your resume against a real job posting.
+- **Private stays private.** Client names you list never appear in anything
+  public; your chosen generic wording is used instead.
+- **Your voice.** You edit a shared page; your final version becomes the
+  reference every later draft matches.
+
+## How it works
+
+```
+you: "shipped X today"  ->  inbox note  ->  story (numbers + where they came from)
+        ->  ranked  ->  resume and site copy  ->  checks: trace, one page, ATS, privacy
+        ->  you review and approve
 ```
 
-`setup.sh` copies the sample person into a new folder, adds this repo as a
-plugin marketplace, and installs the plugin for that project. It asks for
-nothing except Claude access (your Anthropic API key or a Claude plan that
-includes Claude Code). Run `./setup.sh --dry-run <dir>` to see every command
-first.
+It is packaged as a Claude Code plugin (skills, agents and small check
+scripts). `setup.sh` installs it for your folder; you never need to call the
+pieces yourself, but you can (see below).
 
 ## Your project layout
 

@@ -15,4 +15,4 @@ run git -C "$DEST" init -q
 ( [ $DRY = 1 ] && echo "+ cd $DEST" ) || cd "$DEST"
 run claude plugin marketplace add "$HERE" --scope project
 run claude plugin install agentic-resume@agentic-resume --scope project
-echo "Done. Next: cd $DEST && claude, then /agentic-resume:rank-stories"
+echo "Done. Next: cd $DEST && claude, then say: make this my resume"
