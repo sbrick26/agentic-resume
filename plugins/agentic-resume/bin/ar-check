@@ -17,5 +17,6 @@ else echo "gitleaks: skipped (not installed, or not a git repo)"; fi
 if [ -f "$ROOT/resume/resume.md" ]; then
   "$HERE/ar-lint" --root "$ROOT" "$ROOT/resume/resume.md" || fail=1
   "$HERE/ar-trace" --root "$ROOT" || fail=1
+  "$HERE/ar-ats" --root "$ROOT" || fail=1
 fi
 exit $fail

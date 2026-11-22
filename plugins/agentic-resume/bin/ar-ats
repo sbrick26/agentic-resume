@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+"""ar-ats: will an applicant tracking system read this resume cleanly, and does it carry the target
+role's keywords? Checks standard section headings, no tables or images, a date range on every role,
+one-page length, and keyword coverage from profile/target-keywords.txt (one keyword per line;
+synonyms on one line separated by "|"). Prints a 0 to 100 score and every issue.
+Usage: ar-ats [--root DIR] [--resume FILE] [--min-score 80] [--min-coverage 0.7]"""
+import argparse, os, re, sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "lib"))
+import arlib
+ap = argparse.ArgumentParser(); ap.add_argument("--root"); ap.add_argument("--resume")
+ap.add_argument("--parse", action="store_true", help="print what a mock ATS parser extracted, as JSON")
+ap.add_argument("--min-score", type=int, default=80); ap.add_argument("--min-coverage", type=float, default=0.7)
+a = ap.parse_args(); root = arlib.project_root(a.root)
+path = a.resume or os.path.join(root, "resume", "resume.md")
+text = open(path, encoding="utf-8").read()
+issues, score, fatal = [], 100, []
+heads = [re.sub(r"^#+\s*", "", l).strip().lower() for l in text.splitlines() if l.startswith("#")]
+for need, alts in (("experience", ("experience", "work experience", "professional experience")), ("education", ("education",)), ("skills", ("skills", "technical skills"))):
+    if not any(h in alts or h.startswith(alts) for h in heads):
+        issues.append(f"missing a standard '{need.title()}' heading"); score -= 15; fatal.append("heading")
+if re.search(r"^\s*\|.*\|\s*$", text, re.M): issues.append("contains a table (many ATS parsers scramble tables)"); score -= 15; fatal.append("table")
+if re.search(r"!\[|<img", text): issues.append("contains an image"); score -= 10
+if not re.search(r"@|github\.com|\.dev|\.com|\.io", text): issues.append("no contact line (email or profile link)"); score -= 5
+MON = r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.? \d{4}"
+role_lines = [l for l in text.splitlines() if re.search(r"\|\s*" + MON, l) or re.search(MON + r"\s*(to|-)\s*", l)]
+if not role_lines: issues.append("no role has a date range like 'Jan 2026 to Present'"); score -= 15
+for l in role_lines:
+    if not re.search(MON + r"\s*(to|-)\s*(" + MON + r"|Present|present|\d{4})", l): issues.append(f"date range not in a standard form: {l.strip()[:60]}"); score -= 3
+words = len(re.sub(r"[#*|`]", " ", text).split())
+if words > 650: issues.append(f"{words} words; one page is usually 450 to 650"); score -= min(15, (words - 650) // 20 + 5)
+kw_path = os.path.join(root, "profile", "target-keywords.txt")
+coverage = None
+if os.path.exists(kw_path):
+    kws = [l.strip() for l in open(kw_path, encoding="utf-8") if l.strip() and not l.startswith("#")]
+    have, missing = 0, []
+    for k in kws:
+        alts = [x.strip() for x in k.split("|")]
+        # plural and possessive forms count ("LLMs", "API's")
+        if any(re.search(r"(?<![\w])" + re.escape(x) + r"(s|'s)?(?![\w])", text, re.I) for x in alts): have += 1
+        else: missing.append(alts[0])
+    coverage = have / len(kws) if kws else 1.0
+    if coverage < a.min_coverage: score -= 10
+    print(f"keyword coverage: {have}/{len(kws)} ({coverage:.0%}); missing: {', '.join(missing) or 'none'}")
+else:
+    print("keyword coverage: skipped (no profile/target-keywords.txt)")
+# mock ATS parse: what a parser would extract into its candidate record
+import json
+MONTH = r"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.? \d{4}"
+lines = text.splitlines()
+first = next((l for l in lines if l.strip()), "")
+name_m = re.search(r"\*\*(.+?)\*\*", first) or re.match(r"#*\s*([A-Z][\w'.-]+(?: [A-Z][\w'.-]+){0,3})", first.strip())
+record = {"name": name_m.group(1).strip() if name_m else None,
+          "emails": re.findall(r"[\w.+-]+@[\w-]+\.[\w.]+", text),
+          "links": re.findall(r"\b(?:[\w-]+\.)+(?:com|dev|io|net|org)(?:/[\w./-]*)?", first),
+          "roles": [], "education": [], "skills": []}
+section, company = None, None
+for l in lines:
+    st = l.strip()
+    if st.startswith("#"):
+        h = re.sub(r"^#+\s*", "", st).strip()
+        hl = h.lower()
+        if hl.startswith(("experience", "work experience", "professional experience")): section = "exp"; continue
+        if hl.startswith("education"): section = "edu"; continue
+        if hl.startswith(("skills", "technical skills")): section = "skills"; continue
+        if section == "exp": company = h.split(",")[0].split("|")[0].strip(); continue
+        if section in (None,) and record["roles"] == [] and "," in h: company = h.split(",")[0].strip(); section = "exp"; continue
+    if section == "exp":
+        m = re.search(r"\*\*(.+?)\*\*\s*\|\s*(" + MONTH + r")\s*(?:to|-)\s*(" + MONTH + r"|present|Present|\d{4})", st)
+        if m: record["roles"].append({"company": company, "title": m.group(1).strip(), "start": m.group(2), "end": m.group(3)})
+    elif section == "edu" and st.startswith(("-", "*")) or (section == "edu" and st and not st.startswith("#")):
+        if st: record["education"].append(st.lstrip("-* ").strip())
+    elif section == "skills" and st:
+        record["skills"] += [x.strip(" .") for x in re.split(r",|;", re.sub(r"\*\*.*?\*\*:?", "", st)) if x.strip(" .")]
+parse_issues = []
+if not record["name"]: parse_issues.append("parser could not find a name on the first line")
+if not record["emails"]: parse_issues.append("no email found (most ATS require one)")
+if not record["roles"]: parse_issues.append("no roles parsed (title | Mon YYYY to Mon YYYY under a company heading)")
+for r in record["roles"]:
+    if not r["company"]: parse_issues.append(f"role '{r['title']}' has no company the parser can attach")
+if len(record["skills"]) < 5: parse_issues.append(f"only {len(record['skills'])} skills parsed")
+for i in parse_issues: print("PARSE", i)
+score -= 5 * len(parse_issues)
+if a.parse: print(json.dumps(record, indent=1))
+score = max(score, 0)
+for i in issues: print("ISSUE", i)
+# a missing standard heading or a table fails outright: parsers misread the whole page
+ok = not fatal and score >= a.min_score and (coverage is None or coverage >= a.min_coverage)
+print(f"ar-ats: score {score}/100, {words} words, {'pass' if ok else 'FAIL'}")
+sys.exit(0 if ok else 1)

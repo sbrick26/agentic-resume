@@ -27,7 +27,9 @@ GOOD = [
 
 def write_resume(root, items):
     os.makedirs(os.path.join(root, "resume"), exist_ok=True)
-    body = ["# Alex Rivera", "", "Platform engineer.", "", "## Selected work", ""] + [f"- {b}" for b, _ in items]
+    body = ["# Alex Rivera", "alex@example.com", "", "Platform engineer.", "", "## Experience", "",
+            "### A regional freight company", "**Platform Engineer** | Oct 2025 to Present", ""] + [f"- {b}" for b, _ in items] + [
+            "", "## Education", "", "Software engineering bootcamp, 2024", "", "## Skills", "", "Python, AWS, CI/CD"]
     open(os.path.join(root, "resume", "resume.md"), "w").write("\n".join(body) + "\n")
     trace = ["# Resume trace (private)", ""] + [f"{i}. {p}" for i, (_, p) in enumerate(items, 1)]
     open(os.path.join(root, "profile", "resume-trace.md"), "w").write("\n".join(trace) + "\n")
@@ -119,6 +121,18 @@ def main():
     ok = ok and code2 != 0
     ok_all &= ok
     results.append(("intake writes a valid entry, rejects a correction without --corrects", "ar-add-entry", "none", "PASS" if ok else "WRONG"))
+
+    # ATS: a clean, standard resume passes; a missing Experience heading or a table fails
+    ats_ok = "# Alex Rivera\nalex@example.com\n\n## Experience\n\n### A regional freight company\n**Platform Engineer** | Oct 2025 to Present\n\n- Cut checkout errors from 4.1 to 0.6 percent.\n\n## Education\n\nBootcamp, 2024\n\n## Skills\n\nPython, AWS\n"
+    for label, body, want in (("ATS: standard resume passes", ats_ok, 0),
+                              ("ATS: missing Experience heading fails", ats_ok.replace("## Experience", "## Work"), 1),
+                              ("ATS: a table fails", ats_ok + "\n| a | b |\n|---|---|\n", 1)):
+        root = fresh(tmp, "ats" + str(want) + str(len(body)))
+        fpath = os.path.join(root, "resume", "ats-test.md"); open(fpath, "w").write(body)
+        code, out = run([os.path.join(BIN, "ar-ats"), "--root", root, "--resume", fpath], root)
+        ok = (code == 0) == (want == 0)
+        ok_all &= ok
+        results.append((label, "ar-ats", f"exit {code}", "PASS" if ok else "WRONG"))
 
     w = max(len(r[0]) for r in results)
     print(f"{'case'.ljust(w)} | must fail     | failed                 | result")

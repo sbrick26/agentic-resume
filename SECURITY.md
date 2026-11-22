@@ -7,8 +7,8 @@ runs, so you can review it.
   `git commit` or `git push`. It runs ar-check and blocks the command (exit
   2) if a check fails. It reads your project files; it writes nothing.
 - **bin/**: ar-add-entry writes one file to career-log/inbox/. ar-rank writes
-  stories/INDEX.md. ar-guard, ar-trace, ar-lint, ar-secrets and ar-check only
-  read. None of them use the network.
+  stories/INDEX.md. ar-guard, ar-trace, ar-lint, ar-secrets, ar-ats and ar-check
+  only read. None of them use the network.
 - **No MCP servers, no monitors, no background processes.**
 - **Untrusted text**: inbox entries, notes and web pages are treated as
   data. Agents that read them have no write access outside the project and

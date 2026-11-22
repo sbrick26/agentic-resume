@@ -36,5 +36,10 @@ Rules:
 5. Write the public resume to resume/resume.md with no story file names or
    paths in it. Write the private map to profile/resume-trace.md as
    "N. stories/<file>.md", one line per bullet, in bullet order.
-6. Run `ar-lint resume/resume.md` and `ar-trace`; fix every failure before you
+5b. Make it worth reading: lead with the most striking true facts (scale,
+   firsts, things people would repeat) and keep one human touch the user
+   chose (for example a playful headline). Keep standard Experience,
+   Education and Skills headings, no tables, and use the target keywords in
+   profile/target-keywords.txt wherever the work backs them.
+6. Run `ar-lint resume/resume.md`, `ar-trace` and `ar-ats`; fix every failure before you
    finish. Report what you changed and any open questions, in under 100 words.

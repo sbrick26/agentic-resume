@@ -1,0 +1,14 @@
+# Keywords from the job postings you target, one per line; synonyms on one line with "|".
+# ar-ats reports how many appear in your resume. Only add ones you can back with real work.
+forward deployed | FDE
+customer-facing | client-facing | client
+production
+LLM | large language model
+agents | agentic
+Python
+TypeScript
+APIs | API
+integrations | integration
+discovery
+POC | proof of concept | pilot
+evals | evaluation

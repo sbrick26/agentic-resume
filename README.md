@@ -58,6 +58,7 @@ same model as the writer), qa (Haiku), site-designer (Opus, read-only).
 | ar-trace | a bullet with no story, a number not in its story, a story file name in public output |
 | ar-lint | em or en dashes, words you listed to avoid, long or verbless bullets |
 | ar-secrets | API keys, tokens, private keys |
+| ar-ats | missing standard headings, tables, images, odd date ranges, over one page, low keyword coverage (profile/target-keywords.txt) |
 | ar-check | any of the above, plus gitleaks if installed |
 
 ## Evals
